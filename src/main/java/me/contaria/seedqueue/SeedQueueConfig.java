@@ -441,7 +441,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public static class CPUClockSpeed {
 
         /**
-         * @return The clock speed of the local CPU in MHz or {@code null}
+         * @return The clock speed of the local CPU in MHz, if it fails then it returns {@code -1}
          */
         public static double getCPUClockSpeed() {
             String os = System.getProperty("os.name").toLowerCase();
@@ -465,9 +465,9 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (line.matches("\\d+")) {
+                    if (line.trim().matches("\\d+")) {
                         try {
-                            return Double.parseDouble(line);
+                            return Double.parseDouble(line) / 1000;
                         } catch (NumberFormatException e) {
                             return -1;
                         }
@@ -488,7 +488,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
                 String line;
                 if ((line = reader.readLine()) != null) {
                     try {
-                        return Double.parseDouble(line);
+                        return Double.parseDouble(line) / 1000;
                     } catch (NumberFormatException e) {
                         return -1;
                     }
@@ -508,7 +508,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
                 String line;
                 if ((line = reader.readLine()) != null) {
                     try {
-                        return Double.parseDouble(line);
+                        return Double.parseDouble(line) / 1000;
                     } catch (NumberFormatException e) {
                         return -1;
                     }
