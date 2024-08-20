@@ -15,6 +15,7 @@ import net.minecraft.client.gui.screen.ScreenTexts;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.StringRenderable;
 import net.minecraft.text.TranslatableText;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.Nullable;
 import org.mcsr.speedrunapi.config.SpeedrunConfigAPI;
 import org.mcsr.speedrunapi.config.SpeedrunConfigContainer;
@@ -283,6 +284,10 @@ public class SeedQueueConfig implements SpeedrunConfig {
         return scaleFactor;
     }
 
+    private static int getProcessorScore() {
+        return (int) (Math.max(1, PROCESSORS) * ProcessorSpeed.getCPUClockSpeed());
+    }
+
     @Override
     public @Nullable SpeedrunOption<?> parseField(Field field, SpeedrunConfig config, String... idPrefix) {
         if ("useWall".equals(field.getName())) {
@@ -438,7 +443,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
         }
     }
 
-    public static class CPUClockSpeed {
+    public static class ProcessorSpeed {
 
         /**
          * @return The clock speed of the local CPU in MHz, if it fails then it returns {@code -1}
