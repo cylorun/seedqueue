@@ -40,6 +40,9 @@ import java.util.Objects;
 @InitializeOn(InitializeOn.InitPoint.PRELAUNCH)
 public class SeedQueueConfig implements SpeedrunConfig {
     @Config.Ignored
+    static final int AUTO_THREADS = 0;
+
+    @Config.Ignored
     static final int AUTO = -1;
 
     @Config.Ignored
@@ -132,7 +135,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     @Config.Category("threading")
     @Config.Numbers.Whole.Bounds(min = -1, max = 32, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
-    protected int backgroundExecutorThreads = AUTO;
+    protected int backgroundExecutorThreads = AUTO_THREADS;
 
     @Config.Category("threading")
     @Config.Numbers.Whole.Bounds(min = Thread.MIN_PRIORITY, max = Thread.NORM_PRIORITY)
@@ -140,7 +143,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     @Config.Category("threading")
     @Config.Numbers.Whole.Bounds(min = -1, max = 32, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
-    protected int wallExecutorThreads = AUTO;
+    protected int wallExecutorThreads = AUTO_THREADS;
 
     @Config.Category("threading")
     @Config.Numbers.Whole.Bounds(min = Thread.MIN_PRIORITY, max = Thread.NORM_PRIORITY)
@@ -148,7 +151,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     @Config.Category("threading")
     @Config.Numbers.Whole.Bounds(min = -1, max = 8, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
-    private int chunkUpdateThreads = AUTO;
+    private int chunkUpdateThreads = AUTO_THREADS;
 
     @Config.Category("threading")
     @Config.Numbers.Whole.Bounds(min = Thread.MIN_PRIORITY, max = Thread.NORM_PRIORITY)
@@ -185,12 +188,12 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     /**
      * Returns the amount of threads the Background Executor should use according to {@link SeedQueueConfig#backgroundExecutorThreads}.
-     * Calculates a good default based on {@link SeedQueueConfig#maxConcurrently} if set to {@link SeedQueueConfig#AUTO}.
+     * Calculates a good default based on {@link SeedQueueConfig#maxConcurrently} if set to {@link SeedQueueConfig#AUTO_THREADS}.
      *
      * @return The parallelism to be used for the Background Executor Service.
      */
     public int getBackgroundExecutorThreads() {
-        if (this.backgroundExecutorThreads == AUTO) {
+        if (this.backgroundExecutorThreads == AUTO_THREADS) {
             return Math.max(1, Math.min(this.maxConcurrently + 1, PROCESSORS));
         }
         return this.backgroundExecutorThreads;
@@ -198,12 +201,12 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     /**
      * Returns the amount of threads the Wall Executor should use according to {@link SeedQueueConfig#wallExecutorThreads}.
-     * The amount of available processors is used if set to {@link SeedQueueConfig#AUTO}.
+     * The amount of available processors is used if set to {@link SeedQueueConfig#AUTO_THREADS}.
      *
      * @return The parallelism to be used for the Background Executor Service.
      */
     public int getWallExecutorThreads() {
-        if (this.wallExecutorThreads == AUTO) {
+        if (this.wallExecutorThreads == AUTO_THREADS) {
             return Math.max(1, PROCESSORS);
         }
         return this.wallExecutorThreads;
@@ -211,12 +214,12 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     /**
      * Returns the amount of worker threads created PER WorldRenderer on the Wall Screen according to {@link SeedQueueConfig#chunkUpdateThreads}.
-     * Calculates a sane default if set to {@link SeedQueueConfig#AUTO}.
+     * Calculates a sane default if set to {@link SeedQueueConfig#AUTO_THREADS}.
      *
      * @return The amount of Sodium worker threads to launch on the Wall Screen.
      */
     public int getChunkUpdateThreads() {
-        if (this.chunkUpdateThreads == AUTO) {
+        if (this.chunkUpdateThreads == AUTO_THREADS) {
             return Math.min(Math.max(2, (int) Math.ceil((double) PROCESSORS / this.maxConcurrently_onWall)), PROCESSORS);
         }
         return this.chunkUpdateThreads;
@@ -224,7 +227,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     /**
      * Returns the amount of threads the Background Executor should use according to {@link SeedQueueConfig#backgroundPreviews}.
-     * Calculates a good default based on {@link SeedQueueConfig#maxConcurrently_onWall} and {@link SeedQueueConfig#maxCapacity} if set to {@link SeedQueueConfig#AUTO}.
+     * Calculates a good default based on {@link SeedQueueConfig#maxConcurrently_onWall} and {@link SeedQueueConfig#maxCapacity} if set to {@link SeedQueueConfig#AUTO_THREADS}.
      *
      * @return The amount of preview to be loaded in the background.
      */
@@ -250,10 +253,16 @@ public class SeedQueueConfig implements SpeedrunConfig {
     }
 
     public int getMaxCapacity() {
+        if (this.maxCapacity == AUTO) {
+
+        }
         return this.maxCapacity;
     }
 
     public int getMaxConcurrently_onWall() {
+        if (this.maxConcurrently_onWall == AUTO) {
+
+        }
         return this.maxConcurrently_onWall;
     }
 
@@ -432,9 +441,8 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public static class CPUClockSpeed {
 
         /**
-        *
-        * @return The clock speed of the local CPU in MHz or {@code null}
-        */
+         * @return The clock speed of the local CPU in MHz or {@code null}
+         */
         public static double getCPUClockSpeed() {
             String os = System.getProperty("os.name").toLowerCase();
 
@@ -473,7 +481,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
         private static double getLinuxClockSpeed() {
             try {
-                String[] command = { "/bin/sh", "-c", "cat /proc/cpuinfo | grep 'MHz' | awk '{print $4}' | head -n 1" };
+                String[] command = {"/bin/sh", "-c", "cat /proc/cpuinfo | grep 'MHz' | awk '{print $4}' | head -n 1"};
                 Process process = Runtime.getRuntime().exec(command);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
@@ -493,7 +501,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
         private static double getMacClockSpeed() {
             try {
-                String[] command = { "/bin/sh", "-c", "sysctl -n machdep.cpu.brand_string" };
+                String[] command = {"/bin/sh", "-c", "sysctl -n machdep.cpu.brand_string"};
                 Process process = Runtime.getRuntime().exec(command);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 

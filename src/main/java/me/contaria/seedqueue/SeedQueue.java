@@ -422,8 +422,8 @@ public class SeedQueue implements ClientModInitializer {
                 "E: " + SEED_QUEUE.size() + "/" + SeedQueue.config.getMaxCapacity(),
                 "C: " + SeedQueue.config.getMaxConcurrently()
                         + (SeedQueue.config.shouldUseWall() ? " | " + SeedQueue.config.getMaxConcurrently_onWall() : ""),
-                "W: " + (SeedQueue.config.backgroundExecutorThreads == SeedQueueConfig.AUTO ? "Auto" : SeedQueue.config.backgroundExecutorThreads)
-                        + (SeedQueue.config.shouldUseWall() ? " | " + (SeedQueue.config.wallExecutorThreads == SeedQueueConfig.AUTO ? "Auto" : SeedQueue.config.wallExecutorThreads) : ""),
+                "W: " + (SeedQueue.config.backgroundExecutorThreads == SeedQueueConfig.AUTO_THREADS ? "Auto" : SeedQueue.config.backgroundExecutorThreads)
+                        + (SeedQueue.config.shouldUseWall() ? " | " + (SeedQueue.config.wallExecutorThreads == SeedQueueConfig.AUTO_THREADS ? "Auto" : SeedQueue.config.wallExecutorThreads) : ""),
                 "M: " + SeedQueue.config.getMaxWorldGenerationPercentage() + "%"
         ));
         return debugText;
