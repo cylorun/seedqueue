@@ -54,7 +54,7 @@ public class SeedQueueExecutorWrapper implements Executor {
     private static Executor getSeedqueueExecutor() {
         // if Max Generating Seeds is set to 0 while not on wall,
         // this will ensure the background executor is never created
-        if (SeedQueue.isOnWall() || SeedQueue.config.maxConcurrently == 0) {
+        if (SeedQueue.isOnWall() || SeedQueue.config.getMaxConcurrently() == 0) {
             return getOrCreateWallExecutor();
         }
         return getOrCreateBackgroundExecutor();

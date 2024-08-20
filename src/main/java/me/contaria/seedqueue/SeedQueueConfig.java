@@ -23,7 +23,9 @@ import org.mcsr.speedrunapi.config.api.SpeedrunOption;
 import org.mcsr.speedrunapi.config.api.annotations.Config;
 import org.mcsr.speedrunapi.config.api.annotations.InitializeOn;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +40,7 @@ import java.util.Objects;
 @InitializeOn(InitializeOn.InitPoint.PRELAUNCH)
 public class SeedQueueConfig implements SpeedrunConfig {
     @Config.Ignored
-    static final int AUTO = 0;
+    static final int AUTO = -1;
 
     @Config.Ignored
     private static final int PROCESSORS = Runtime.getRuntime().availableProcessors();
@@ -47,20 +49,20 @@ public class SeedQueueConfig implements SpeedrunConfig {
     private SpeedrunConfigContainer<?> container;
 
     @Config.Category("queue")
-    @Config.Numbers.Whole.Bounds(min = 0, max = 30)
-    public int maxCapacity = 0;
+    @Config.Numbers.Whole.Bounds(min = -1, max = 30, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
+    private int maxCapacity = AUTO;
 
     @Config.Category("queue")
-    @Config.Numbers.Whole.Bounds(min = 0, max = 30)
-    public int maxConcurrently = 1;
+    @Config.Numbers.Whole.Bounds(min = -1, max = 30, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
+    private int maxConcurrently = AUTO;
 
     @Config.Category("queue")
-    @Config.Numbers.Whole.Bounds(min = 1, max = 30)
-    public int maxConcurrently_onWall = 1;
+    @Config.Numbers.Whole.Bounds(min = -1, max = 30, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
+    private int maxConcurrently_onWall = AUTO;
 
     @Config.Category("queue")
-    @Config.Numbers.Whole.Bounds(max = 100)
-    public int maxWorldGenerationPercentage = 100;
+    @Config.Numbers.Whole.Bounds(min = -1, max = 100, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
+    private int maxWorldGenerationPercentage = AUTO;
 
     @Config.Category("chunkmap")
     public ChunkMapVisibility chunkMapVisibility = ChunkMapVisibility.TRUE;
@@ -105,8 +107,8 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public int previewFPS = 15;
 
     @Config.Category("performance")
-    @Config.Numbers.Whole.Bounds(min = 0, max = 30)
-    public int backgroundPreviews = 0;
+    @Config.Numbers.Whole.Bounds(min = -1, max = 30, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
+    public int backgroundPreviews = AUTO;
 
     @Config.Category("performance")
     public boolean freezeLockedPreviews = false;
@@ -129,7 +131,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public int serverThreadPriority = 4;
 
     @Config.Category("threading")
-    @Config.Numbers.Whole.Bounds(min = 0, max = 32, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
+    @Config.Numbers.Whole.Bounds(min = -1, max = 32, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
     protected int backgroundExecutorThreads = AUTO;
 
     @Config.Category("threading")
@@ -137,7 +139,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public int backgroundExecutorThreadPriority = 3;
 
     @Config.Category("threading")
-    @Config.Numbers.Whole.Bounds(min = 0, max = 32, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
+    @Config.Numbers.Whole.Bounds(min = -1, max = 32, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
     protected int wallExecutorThreads = AUTO;
 
     @Config.Category("threading")
@@ -145,7 +147,7 @@ public class SeedQueueConfig implements SpeedrunConfig {
     public int wallExecutorThreadPriority = 4;
 
     @Config.Category("threading")
-    @Config.Numbers.Whole.Bounds(min = 0, max = 8, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
+    @Config.Numbers.Whole.Bounds(min = -1, max = 8, enforce = Config.Numbers.EnforceBounds.MIN_ONLY)
     private int chunkUpdateThreads = AUTO;
 
     @Config.Category("threading")
@@ -220,6 +222,42 @@ public class SeedQueueConfig implements SpeedrunConfig {
         return this.chunkUpdateThreads;
     }
 
+    /**
+     * Returns the amount of threads the Background Executor should use according to {@link SeedQueueConfig#backgroundPreviews}.
+     * Calculates a good default based on {@link SeedQueueConfig#maxConcurrently_onWall} and {@link SeedQueueConfig#maxCapacity} if set to {@link SeedQueueConfig#AUTO}.
+     *
+     * @return The amount of preview to be loaded in the background.
+     */
+    public int getBackgroundPreviews() {
+        if (this.backgroundPreviews == AUTO) {
+            return Math.min(this.maxConcurrently_onWall, this.maxCapacity - this.maxConcurrently_onWall);
+        }
+        return this.backgroundPreviews;
+    }
+
+    public int getMaxWorldGenerationPercentage() {
+        if (this.maxWorldGenerationPercentage == AUTO) {
+            return 15;
+        }
+        return this.maxWorldGenerationPercentage;
+    }
+
+    public int getMaxConcurrently() {
+        if (this.maxConcurrently == AUTO) {
+
+        }
+        return this.maxConcurrently;
+    }
+
+    public int getMaxCapacity() {
+        return this.maxCapacity;
+    }
+
+    public int getMaxConcurrently_onWall() {
+        return this.maxConcurrently_onWall;
+    }
+
+
     public boolean shouldUseWall() {
         return this.canUseWall && this.maxCapacity > 0 && this.useWall;
     }
@@ -242,7 +280,8 @@ public class SeedQueueConfig implements SpeedrunConfig {
             return new SpeedrunConfigAPI.CustomOption.Builder<Boolean>(config, this, field, idPrefix)
                     .createWidget((option, config_, configStorage, optionField) -> {
                         if (!this.canUseWall) {
-                            ButtonWidget button = new ButtonWidget(0, 0, 150, 20, new TranslatableText("seedqueue.menu.config.useWall.notAvailable"), b -> {}, ((b, matrices, mouseX, mouseY) -> {
+                            ButtonWidget button = new ButtonWidget(0, 0, 150, 20, new TranslatableText("seedqueue.menu.config.useWall.notAvailable"), b -> {
+                            }, ((b, matrices, mouseX, mouseY) -> {
                                 List<StringRenderable> tooltip = new ArrayList<>(MinecraftClient.getInstance().textRenderer.wrapLines(new TranslatableText("seedqueue.menu.config.useWall.notAvailable.tooltip"), 200));
                                 for (int i = 1; i <= 3; i++) {
                                     tooltip.add(new TranslatableText("seedqueue.menu.config.useWall.notAvailable.tooltip." + i));
@@ -387,6 +426,89 @@ public class SeedQueueConfig implements SpeedrunConfig {
             jsonObject.add("width", new JsonPrimitive(this.width));
             jsonObject.add("height", new JsonPrimitive(this.height));
             return jsonObject;
+        }
+    }
+
+    public static class CPUClockSpeed {
+
+        /**
+        *
+        * @return The clock speed of the local CPU in MHz or {@code null}
+        */
+        public static double getCPUClockSpeed() {
+            String os = System.getProperty("os.name").toLowerCase();
+
+            if (os.contains("win")) {
+                return getWindowsClockSpeed();
+            } else if (os.contains("nix") || os.contains("nux")) {
+                return getLinuxClockSpeed();
+            } else if (os.contains("mac")) {
+                return getMacClockSpeed();
+            }
+
+            return -1;
+        }
+
+        private static double getWindowsClockSpeed() {
+            try {
+                String command = "wmic cpu get MaxClockSpeed";
+                Process process = Runtime.getRuntime().exec(command);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.matches("\\d+")) {
+                        try {
+                            return Double.parseDouble(line);
+                        } catch (NumberFormatException e) {
+                            return -1;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return -1;
+        }
+
+        private static double getLinuxClockSpeed() {
+            try {
+                String[] command = { "/bin/sh", "-c", "cat /proc/cpuinfo | grep 'MHz' | awk '{print $4}' | head -n 1" };
+                Process process = Runtime.getRuntime().exec(command);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                String line;
+                if ((line = reader.readLine()) != null) {
+                    try {
+                        return Double.parseDouble(line);
+                    } catch (NumberFormatException e) {
+                        return -1;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return -1;
+        }
+
+        private static double getMacClockSpeed() {
+            try {
+                String[] command = { "/bin/sh", "-c", "sysctl -n machdep.cpu.brand_string" };
+                Process process = Runtime.getRuntime().exec(command);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                String line;
+                if ((line = reader.readLine()) != null) {
+                    try {
+                        return Double.parseDouble(line);
+                    } catch (NumberFormatException e) {
+                        return -1;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return -1;
         }
     }
 }

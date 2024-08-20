@@ -174,7 +174,7 @@ public class SeedQueue implements ClientModInitializer {
      */
     public static boolean shouldGenerate() {
         synchronized (LOCK) {
-            return getGeneratingCount() < getMaxGeneratingCount() && SEED_QUEUE.size() < config.maxCapacity;
+            return getGeneratingCount() < getMaxGeneratingCount() && SEED_QUEUE.size() < config.getMaxCapacity();
         }
     }
 
@@ -227,11 +227,11 @@ public class SeedQueue implements ClientModInitializer {
     /**
      * @return The maximum number of {@link SeedQueueEntry}'s that should be generating concurrently.
      *
-     * @see SeedQueueConfig#maxConcurrently
-     * @see SeedQueueConfig#maxConcurrently_onWall
+     * @see SeedQueueConfig#getMaxConcurrently()
+     * @see SeedQueueConfig#getMaxConcurrently_onWall()
      */
     private static int getMaxGeneratingCount() {
-        return isOnWall() ? config.maxConcurrently_onWall : config.maxConcurrently;
+        return isOnWall() ? config.getMaxConcurrently_onWall() : config.getMaxConcurrently();
     }
 
     /**
@@ -268,7 +268,7 @@ public class SeedQueue implements ClientModInitializer {
     }
 
     private static boolean shouldStart() {
-        return config.maxCapacity > 0 && (config.maxConcurrently > 0 || config.shouldUseWall());
+        return config.getMaxCapacity() > 0 && (config.getMaxConcurrently() > 0 || config.shouldUseWall());
     }
 
     /**
@@ -419,12 +419,12 @@ public class SeedQueue implements ClientModInitializer {
         debugText.add("");
         debugText.add("SeedQueue v" + VERSION.getFriendlyString());
         debugText.add(String.join(", ",
-                "E: " + SEED_QUEUE.size() + "/" + SeedQueue.config.maxCapacity,
-                "C: " + SeedQueue.config.maxConcurrently
-                        + (SeedQueue.config.shouldUseWall() ? " | " + SeedQueue.config.maxConcurrently_onWall : ""),
+                "E: " + SEED_QUEUE.size() + "/" + SeedQueue.config.getMaxCapacity(),
+                "C: " + SeedQueue.config.getMaxConcurrently()
+                        + (SeedQueue.config.shouldUseWall() ? " | " + SeedQueue.config.getMaxConcurrently_onWall() : ""),
                 "W: " + (SeedQueue.config.backgroundExecutorThreads == SeedQueueConfig.AUTO ? "Auto" : SeedQueue.config.backgroundExecutorThreads)
                         + (SeedQueue.config.shouldUseWall() ? " | " + (SeedQueue.config.wallExecutorThreads == SeedQueueConfig.AUTO ? "Auto" : SeedQueue.config.wallExecutorThreads) : ""),
-                "M: " + SeedQueue.config.maxWorldGenerationPercentage + "%"
+                "M: " + SeedQueue.config.getMaxWorldGenerationPercentage() + "%"
         ));
         return debugText;
     }
